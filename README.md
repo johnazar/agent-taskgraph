@@ -110,6 +110,63 @@ graph.addTask("install", installDeps, [], { retries: 2 });
 
 ---
 
+## ⚡ Parallel execution
+
+Tasks run in parallel automatically — as soon as their dependencies are satisfied.
+
+```ts
+import { TaskGraph } from "agent-taskgraph";
+
+const graph = new TaskGraph();
+
+// These two have no deps — they run at the same time
+graph.addTask("fetch-data",   fetchData);
+graph.addTask("fetch-config", fetchConfig);
+
+// Waits for both fetches to finish, then runs
+graph.addTask("process", process, ["fetch-data", "fetch-config"]);
+
+// These two both depend only on "process" — they run in parallel
+graph.addTask("summarize", summarize, ["process"]);
+graph.addTask("notify",    notify,    ["process"]);
+
+await graph.run();
+```
+
+### Concurrency limit
+
+Cap how many tasks run simultaneously:
+
+```ts
+await graph.run({ concurrency: 3 }); // at most 3 tasks at once
+```
+
+Pass `concurrency: 1` to restore fully sequential behaviour.
+
+### Stop on first failure
+
+```ts
+await graph.run({ failFast: true }); // drain running tasks, then stop
+```
+
+By default (`failFast: false`) execution continues — all tasks that *can* run do run, and blocked downstream tasks are marked `"skipped"`.
+
+---
+
+## 🪝 Event hooks
+
+```ts
+await graph.run({
+  concurrency: 3,
+  onTaskStart: (name) => console.log(`▶ ${name} started`),
+  onTaskDone:  (name, status) => console.log(`✓ ${name} → ${status}`),
+});
+```
+
+`onTaskDone` fires with `"done"`, `"failed"`, or `"skipped"`. It does **not** fire between retry attempts — use `onTaskStart` to track those.
+
+---
+
 ## 📊 Status tracking
 
 ```ts
@@ -118,11 +175,23 @@ graph.getStatus();
 
 ```json
 {
-  "install": "done",
-  "build": "running",
-  "start": "pending"
+  "fetch-data":   "done",
+  "fetch-config": "done",
+  "process":      "done",
+  "summarize":    "done",
+  "notify":       "skipped"
 }
 ```
+
+Possible statuses:
+
+| Status | Meaning |
+|---|---|
+| `pending` | Waiting for dependencies or a retry slot |
+| `running` | Currently executing |
+| `done` | Completed successfully |
+| `failed` | Exhausted all retries |
+| `skipped` | A dependency failed or was skipped — never ran |
 
 ---
 
@@ -149,9 +218,9 @@ Otherwise your agent is just guessing.
 
 ## 🛣 Roadmap
 
-* [ ] Parallel execution
+* [x] Parallel execution
+* [x] Event hooks (`onTaskStart`, `onTaskDone`)
 * [ ] Persistent state (resume after crash)
-* [ ] Event hooks (`onTaskStart`)
 * [ ] CLI interface
 
 ---

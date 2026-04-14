@@ -9,6 +9,7 @@ export class Task {
   status: TaskStatus = "pending";
   retries: number;
   attempts = 0;
+  error?: unknown; // last error seen; set on every failed attempt
 
   constructor(
     name: string,
