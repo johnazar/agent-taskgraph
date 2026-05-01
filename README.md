@@ -195,6 +195,54 @@ Possible statuses:
 
 ---
 
+## 💾 Persistent state (resume after crash)
+
+If the process crashes mid-run, pick up exactly where you left off — already-completed tasks are skipped automatically.
+
+```ts
+import { TaskGraph, FileStateStore } from "agent-taskgraph";
+
+const graph = new TaskGraph();
+
+graph.addTask("fetch",   fetchData);
+graph.addTask("process", processData, ["fetch"]);
+graph.addTask("save",    saveResults, ["process"]);
+
+await graph.run({
+  store: new FileStateStore("./run-state.json"),
+  clearOnSuccess: true, // delete the file after a clean run (default: true)
+});
+```
+
+On crash, re-run the same code — the engine reads `run-state.json` and skips tasks that already finished.
+
+### What gets restored
+
+| Persisted status | Retry budget | Resumes as |
+|---|---|---|
+| `done` | — | skipped (won\'t re-run) |
+| `running` (crashed) | remaining | `pending` (retried) |
+| `running` (crashed) | exhausted | `failed` |
+| `failed` | remaining | `pending` (retried) |
+| `failed` | exhausted | `failed` |
+| `pending` / `skipped` | — | `pending` (fresh start) |
+
+### Custom store
+
+Implement the `StateStore` interface to persist anywhere (Redis, SQLite, S3, …):
+
+```ts
+import { StateStore, PersistedState } from "agent-taskgraph";
+
+class MyStore implements StateStore {
+  async load(): Promise<PersistedState | null> { /* ... */ }
+  async save(state: PersistedState): Promise<void> { /* ... */ }
+  async clear(): Promise<void> { /* ... */ }
+}
+```
+
+---
+
 ## 🧩 Why this matters
 
 If you're building AI agents, you need:
@@ -220,7 +268,7 @@ Otherwise your agent is just guessing.
 
 * [x] Parallel execution
 * [x] Event hooks (`onTaskStart`, `onTaskDone`)
-* [ ] Persistent state (resume after crash)
+* [x] Persistent state (resume after crash)
 * [ ] CLI interface
 
 ---

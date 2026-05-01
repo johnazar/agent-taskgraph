@@ -9,7 +9,7 @@
     "dev": "tsc && node dist/index.js"
   },
   "dependencies": {
-    "agent-taskgraph": "latest"
+    "agent-taskgraph": "file:../agent-taskgraph-0.3.0.tgz"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
