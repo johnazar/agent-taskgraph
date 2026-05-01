@@ -1,6 +1,6 @@
 {
   "name": "agent-taskgraph",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Task execution engine for AI agents",
   "author": "johnazar",
   "repository": {
@@ -9,15 +9,23 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
     "publish:public": "npm publish --access public"
   },
-  "keywords": ["ai", "agent", "task", "workflow"],
+  "keywords": [
+    "ai",
+    "agent",
+    "task",
+    "workflow"
+  ],
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "typescript": "^5.8.3"
   }
 }

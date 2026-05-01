@@ -1,4 +1,5 @@
-import { TaskGraph } from "agent-taskgraph";
+import { TaskGraph, FileStateStore } from "agent-taskgraph";
+import { existsSync } from "node:fs";
 
 // Simulate async work with a delay
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -73,10 +74,19 @@ async function main() {
 
   // ── Execution ─────────────────────────────────────────────────────────────
 
+  const STATE_FILE = "./run-state.json";
+  const store = new FileStateStore(STATE_FILE);
+  const isResume = existsSync(STATE_FILE);
+
   console.log("=== agent-taskgraph demo ===\n");
+  if (isResume) {
+    console.log("↺ Resuming from saved state…\n");
+  }
 
   await graph.run({
     concurrency: 3, // at most 3 tasks at once
+    store,
+    clearOnSuccess: true,
     onTaskStart: (name) => log(`▶ starting "${name}"`),
     onTaskDone: (name, status) => log(`■ "${name}" → ${status}`),
   });
